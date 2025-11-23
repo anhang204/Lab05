@@ -166,6 +166,30 @@
             </div>
         </c:if>
         
+        <!-- Search and Filter Form -->
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+            <form action="student" method="GET" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <input type="hidden" name="action" value="list">
+                
+                <div style="flex: 1; min-width: 200px;">
+                    <input type="text" name="search" value="${search}" placeholder="Search by Name or Code..." 
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+                
+                <div style="min-width: 150px;">
+                    <select name="major" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">-- All Majors --</option>
+                        <c:forEach var="m" items="${majors}">
+                            <option value="${m}" ${currentMajor == m ? 'selected' : ''}>${m}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">🔍 Search</button>
+                <a href="student?action=list" class="btn btn-secondary">Reset</a>
+            </form>
+        </div>
+
         <!-- Add New Student Button -->
         <div style="margin-bottom: 20px;">
             <a href="student?action=new" class="btn btn-primary">
@@ -179,11 +203,31 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Student Code</th>
-                            <th>Full Name</th>
-                            <th>Email</th>
-                            <th>Major</th>
+                            <th>
+                                <a href="student?action=list&search=${search}&major=${currentMajor}&sort=id&order=${sortBy == 'id' && sortOrder == 'ASC' ? 'DESC' : 'ASC'}" style="color: white; text-decoration: none;">
+                                    ID ${sortBy == 'id' ? (sortOrder == 'ASC' ? '▲' : '▼') : ''}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="student?action=list&search=${search}&major=${currentMajor}&sort=student_code&order=${sortBy == 'student_code' && sortOrder == 'ASC' ? 'DESC' : 'ASC'}" style="color: white; text-decoration: none;">
+                                    Student Code ${sortBy == 'student_code' ? (sortOrder == 'ASC' ? '▲' : '▼') : ''}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="student?action=list&search=${search}&major=${currentMajor}&sort=full_name&order=${sortBy == 'full_name' && sortOrder == 'ASC' ? 'DESC' : 'ASC'}" style="color: white; text-decoration: none;">
+                                    Full Name ${sortBy == 'full_name' ? (sortOrder == 'ASC' ? '▲' : '▼') : ''}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="student?action=list&search=${search}&major=${currentMajor}&sort=email&order=${sortBy == 'email' && sortOrder == 'ASC' ? 'DESC' : 'ASC'}" style="color: white; text-decoration: none;">
+                                    Email ${sortBy == 'email' ? (sortOrder == 'ASC' ? '▲' : '▼') : ''}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="student?action=list&search=${search}&major=${currentMajor}&sort=major&order=${sortBy == 'major' && sortOrder == 'ASC' ? 'DESC' : 'ASC'}" style="color: white; text-decoration: none;">
+                                    Major ${sortBy == 'major' ? (sortOrder == 'ASC' ? '▲' : '▼') : ''}
+                                </a>
+                            </th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -211,6 +255,25 @@
                         </c:forEach>
                     </tbody>
                 </table>
+                
+                <!-- Pagination -->
+                <div style="margin-top: 20px; display: flex; justify-content: center; gap: 5px;">
+                    <c:if test="${currentPage > 1}">
+                        <a href="student?action=list&page=${currentPage - 1}&search=${search}&major=${currentMajor}&sort=${sortBy}&order=${sortOrder}" class="btn btn-secondary">Previous</a>
+                    </c:if>
+                    
+                    <c:forEach begin="1" end="${totalPages}" var="i">
+                        <a href="student?action=list&page=${i}&search=${search}&major=${currentMajor}&sort=${sortBy}&order=${sortOrder}" 
+                           class="btn ${currentPage == i ? 'btn-primary' : 'btn-secondary'}"
+                           style="padding: 8px 12px;">
+                            ${i}
+                        </a>
+                    </c:forEach>
+                    
+                    <c:if test="${currentPage < totalPages}">
+                        <a href="student?action=list&page=${currentPage + 1}&search=${search}&major=${currentMajor}&sort=${sortBy}&order=${sortOrder}" class="btn btn-secondary">Next</a>
+                    </c:if>
+                </div>
             </c:when>
             <c:otherwise>
                 <div class="empty-state">

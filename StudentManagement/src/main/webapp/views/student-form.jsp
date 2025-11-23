@@ -185,6 +185,12 @@
                        required
                        placeholder="student@example.com">
             </div>
+         <!-- Error Message -->
+        <c:if test="${not empty param.error or not empty error}">
+            <div class="message error">
+                ❌ ${not empty error ? error : param.error}
+            </div>
+        </c:if>
             
             <!-- Major -->
             <div class="form-group">

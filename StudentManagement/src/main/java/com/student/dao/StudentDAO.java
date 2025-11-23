@@ -22,24 +22,65 @@ public class StudentDAO {
         }
     }
     
-    // Get all students
-    public List<Student> getAllStudents() {
+    // Get all students with search, filter, sort, and pagination
+    public List<Student> getAllStudents(String keyword, String major, String sortBy, String sortOrder, int limit, int offset) {
         List<Student> students = new ArrayList<>();
-        String sql = "SELECT * FROM students ORDER BY id DESC";
+        StringBuilder sql = new StringBuilder("SELECT * FROM students WHERE 1=1");
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (full_name LIKE ? OR student_code LIKE ?)");
+        }
+        
+        if (major != null && !major.trim().isEmpty()) {
+            sql.append(" AND major = ?");
+        }
+        
+        if (sortBy != null && !sortBy.trim().isEmpty()) {
+            // Prevent SQL injection by allowing only specific columns
+            if (sortBy.matches("^(id|student_code|full_name|email|major)$")) {
+                String order = "ASC";
+                if ("DESC".equalsIgnoreCase(sortOrder)) {
+                    order = "DESC";
+                }
+                sql.append(" ORDER BY ").append(sortBy).append(" ").append(order);
+            } else {
+                sql.append(" ORDER BY id DESC");
+            }
+        } else {
+            sql.append(" ORDER BY id DESC");
+        }
+        
+        sql.append(" LIMIT ? OFFSET ?");
         
         try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
             
-            while (rs.next()) {
-                Student student = new Student();
-                student.setId(rs.getInt("id"));
-                student.setStudentCode(rs.getString("student_code"));
-                student.setFullName(rs.getString("full_name"));
-                student.setEmail(rs.getString("email"));
-                student.setMajor(rs.getString("major"));
-                student.setCreatedAt(rs.getTimestamp("created_at"));
-                students.add(student);
+            int paramIndex = 1;
+            
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String searchPattern = "%" + keyword.trim() + "%";
+                pstmt.setString(paramIndex++, searchPattern);
+                pstmt.setString(paramIndex++, searchPattern);
+            }
+            
+            if (major != null && !major.trim().isEmpty()) {
+                pstmt.setString(paramIndex++, major);
+            }
+            
+            pstmt.setInt(paramIndex++, limit);
+            pstmt.setInt(paramIndex++, offset);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Student student = new Student();
+                    student.setId(rs.getInt("id"));
+                    student.setStudentCode(rs.getString("student_code"));
+                    student.setFullName(rs.getString("full_name"));
+                    student.setEmail(rs.getString("email"));
+                    student.setMajor(rs.getString("major"));
+                    student.setCreatedAt(rs.getTimestamp("created_at"));
+                    students.add(student);
+                }
             }
             
         } catch (SQLException e) {
@@ -47,6 +88,69 @@ public class StudentDAO {
         }
         
         return students;
+    }
+
+    // Count students for pagination
+    public int countStudents(String keyword, String major) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM students WHERE 1=1");
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (full_name LIKE ? OR student_code LIKE ?)");
+        }
+        
+        if (major != null && !major.trim().isEmpty()) {
+            sql.append(" AND major = ?");
+        }
+        
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            
+            int paramIndex = 1;
+            
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String searchPattern = "%" + keyword.trim() + "%";
+                pstmt.setString(paramIndex++, searchPattern);
+                pstmt.setString(paramIndex++, searchPattern);
+            }
+            
+            if (major != null && !major.trim().isEmpty()) {
+                pstmt.setString(paramIndex++, major);
+            }
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return 0;
+    }
+
+    // Get all unique majors for filter dropdown
+    public List<String> getMajors() {
+        List<String> majors = new ArrayList<>();
+        String sql = "SELECT DISTINCT major FROM students ORDER BY major";
+        
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                String major = rs.getString("major");
+                if (major != null && !major.isEmpty()) {
+                    majors.add(major);
+                }
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return majors;
     }
     
     // Get student by ID
